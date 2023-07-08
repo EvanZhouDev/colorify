@@ -1,4 +1,4 @@
-import { Form, ActionPanel, Action, popToRoot, open } from "@raycast/api";
+import { Form, AI, ActionPanel, Action, popToRoot, open } from "@raycast/api";
 import { useState } from "react";
 import Vibrant from "node-vibrant"
 import fs from "fs"
@@ -30,7 +30,7 @@ export default function Command() {
                             }
                             await Vibrant.from(file)
                                 .getPalette()
-                                .then(palette => {
+                                .then(async (palette) => {
                                     const colorTypes = {};
 
                                     for (const key in palette) {
@@ -38,6 +38,8 @@ export default function Command() {
                                             colorTypes[key] = palette[key].hex;
                                         }
                                     }
+                                    
+                                    console.log(await AI.ask(`Take the following hex colors: ${Object.values(colorTypes).join()} and this file name: ${values.image[0]}. Generate a suitable name for a color theme with these attributes. Only return the name. If the file name is ambiguous, use only the colors. Some examples of good color names include: "Forest", "Ocean", "Flames". Feel free to be creative, but make sure to keep it short, idealy 1 word, two words if you have to.`));
 
                                     let encode = (string) => {
                                         return encodeURI(string).replace("#", "%23")
