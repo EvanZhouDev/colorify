@@ -24,11 +24,11 @@ export default function Command() {
                 <ActionPanel>
                     <Action.SubmitForm
                         onSubmit={async (values) => {
-                            const file = values.image[0];
-                            if (!fs.existsSync(file) || !fs.lstatSync(file).isFile()) {
+                            const image = values.image[0];
+                            if (!fs.existsSync(image) || !fs.lstatSync(image).isFile()) {
                                 return false;
                             }
-                            await Vibrant.from(file)
+                            await Vibrant.from(image)
                                 .getPalette()
                                 .then(async (palette) => {
                                     const colorTypes = {};
@@ -38,8 +38,8 @@ export default function Command() {
                                             colorTypes[key] = palette[key].hex;
                                         }
                                     }
-                                    
-                                    console.log(await AI.ask(`Take the following hex colors: ${Object.values(colorTypes).join()} and this file name: ${values.image[0]}. Generate a suitable name for a color theme with these attributes. Only return the name. If the file name is ambiguous, use only the colors. Some examples of good color names include: "Forest", "Ocean", "Flames". Feel free to be creative, but make sure to keep it short, idealy 1 word, two words if you have to.`));
+
+                                    // console.log(await AI.ask(`Take the following hex colors: ${Object.values(colorTypes).join()} and this file name: ${image}. Generate a suitable name for a color theme with these attributes. Only return the name. If the file name is ambiguous, use only the colors. Some examples of good color names include: "Forest", "Ocean", "Flames". Feel free to be creative, but make sure to keep it short, idealy 1 word, two words if you have to.`));
 
                                     let encode = (string) => {
                                         return encodeURI(string).replace("#", "%23")
@@ -91,6 +91,20 @@ export default function Command() {
                     }
                 }}
             />
+            <Form.Separator />
+            <Form.Description
+                title="Theme Type"
+                text="Depending on your choice, Colorify will either create a darker theme, or a lighter-colored theme."
+            />
+            <Form.Dropdown id="theme" defaultValue="dark">
+                <Form.Dropdown.Item value="light" title="Light Theme" />
+                <Form.Dropdown.Item value="dark" title="Dark Theme" />
+            </Form.Dropdown>
+            <Form.Description
+                title="AI Title"
+                text="Using Raycast AI, Colorify takes your current title, your colors, and more to generate a beautifully named Theme."
+            />
+            <Form.Checkbox id="ai" label="Enhance your theme title with AI" defaultValue={false} />
         </Form>
     );
-};
+}
