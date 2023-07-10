@@ -1,19 +1,21 @@
 import { Form, AI, ActionPanel, Action, popToRoot, open, Toast, showToast, environment } from "@raycast/api";
 import { useState } from "react";
-import Vibrant from "node-vibrant"
-import fs from "fs"
+import fs from "fs";
+import ColorThief from "colorthief";
 
 export default function Command() {
     if (!environment.canAccess(AI)) {
         popToRoot();
         showToast({
             style: Toast.Style.Failure,
-            title: "Please get Pro to use this extension."
-        })
+            title: "Please get Pro to use this extension.",
+        });
     } else {
+        const rgbToHex = (rgb) => "#" + rgb.map((x) => x.toString(16).padStart(2, "0")).join("");
+
         const [imageError, setImageError] = useState();
 
-        function dropImageErrorIfNeeded() {
+        const dropImageErrorIfNeeded = () => {
             if (imageError && imageError.length > 0) {
                 setImageError(undefined);
             }
@@ -26,54 +28,69 @@ export default function Command() {
                         <Action.SubmitForm
                             onSubmit={async (values) => {
                                 const image = values.image[0];
-                                const light = values.theme === "light"
                                 let name = values.themeName;
-                                console.log(light)
+                                let appearance = values.appearance;
                                 if (!fs.existsSync(image) || !fs.lstatSync(image).isFile()) {
                                     return false;
                                 }
-                                await Vibrant.from(image)
-                                    .getPalette()
+                                showToast({
+                                    style: Toast.Style.Animated,
+                                    title: "Loading Theme",
+                                    message: "Using Raycast AI to generate your Theme",
+                                });
+                                await ColorThief.getPalette(image, 7)
                                     .then(async (palette) => {
-                                        const colorTypes = {};
-
-                                        for (const key in palette) {
-                                            if (palette[key] && palette[key].hex) {
-                                                colorTypes[key] = palette[key].hex;
-                                            }
-                                        }
-                                        if (values.ai) {
-                                            showToast({
-                                                style: Toast.Style.Animated,
-                                                title: "Loading AI title..."
-                                            })
-                                            name = await AI.ask(`Take the following hex colors: ${Object.values(colorTypes).join()},this file name: "${image}", and finally this original title: "${values.themeName}". Generate a suitable new title for a color theme with these attributes. Only return the name. If the file name or original title is ambiguous, use only the colors. Some examples of good color names include: "Mystic Forest", "Deep Ocean", "White Flames,". Feel free to be creative, but make sure to keep it short, idealy 1 word, two words or more if you really have to. Only return the name, use no quotation marks, periods, line breaks, or any special characters (including punctuation) whatsoever.`)
-                                            name = name.trim()
+                                        let hex = palette.map((x) => rgbToHex(x));
+                                        let polished;
+                                        if (appearance === "light") {
+                                            polished = await AI.ask(
+                                                `I am making a LIGHT theme for a product, based on this palette: ${hex.join()}. Choose a \`bgLight\` and a \`bgDark\` for the background. Keep the colors CLOSE to each other. Ensure that the background is CLOSE TO WHITE and LIGHT. For \`text\`, choose a color that has GOOD CONTRAST aginst BOTH background colors. A bright, POPPING (\`highlight\`) is also necessary. You may add to or modify the original palette to improve CONTRAST and LEGIBILITY. Return your result in an array of strings: [bgLight, bgDark, text, highlight], such that it can be parsed with JSON.parse()`
+                                            );
+                                        } else {
+                                            polished = await AI.ask(
+                                                `I am making a DARK theme for a product, based on this palette: ${hex.join()}. Choose a \`bgLight\` and a \`bgDark\` for the background. Keep the colors CLOSE to each other. Ensure that the background looks GOOD on a DARK BACKGROUND. For \`text\`, choose a color that has GOOD CONTRAST aginst BOTH background colors. A bright, POPPING (\`highlight\`) is also necessary. You may add to or modify the original palette to improve CONTRAST and LEGIBILITY. Return your result in an array of strings: [bgLight, bgDark, text, highlight], such that it can be parsed with JSON.parse()`
+                                            );
                                         }
 
                                         let encode = (string) => {
-                                            return encodeURI(string).replace("#", "%23")
+                                            return encodeURI(string).replace("#", "%23");
+                                        };
+
+                                        let [backgroundLight, backgroundDark, text, highlight] = JSON.parse(polished.trim()).map((x) =>
+                                            encode(x)
+                                        );
+
+                                        if (!name) {
+                                            showToast({
+                                                style: Toast.Style.Animated,
+                                                title: "Loading Title",
+                                                message: "Using Raycast AI to generate a Title for your Theme",
+                                            });
+
+                                            name = await AI.ask(
+                                                `Given the following colors: ${hex.join()}, name a Raycast Theme. Use 1-2 words, and more only if necessary. Some example names are "White Flames", "Bright Lights", "Burning Candle". Do not include any punctuation or special characters in your title, including quotation marks.`
+                                            );
+                                            name = name.trim().replaceAll('"', "");
                                         }
 
-                                        if (light) {
-                                            open(`raycast://theme?version=1&name=${encode(name) ?? "New Theme"}&appearance=light&colors=${encode(colorTypes.LightMuted)},${encode(colorTypes.LightMuted)},%23000000,${encode(colorTypes.LightVibrant)},${encode(colorTypes.LightVibrant)},%23F50A0A,%23F5600A,%23E0A200,%2307BA65,%230A7FF5,%23470AF5,%23F50AA3`)
-                                        } else {
-                                            open(`raycast://theme?version=1&name=${encode(name) ?? "New Theme"}&appearance=dark&colors=${encode(colorTypes.DarkMuted)},${encode(colorTypes.DarkMuted)},%23FFFFFF,${encode(colorTypes.DarkVibrant)},${encode(colorTypes.DarkVibrant)},%23F50A0A,%23F5600A,%23E0A200,%2307BA65,%230A7FF5,%23470AF5,%23F50AA3`)
-                                        }
+                                        name = encode(name);
 
                                         showToast({
                                             style: Toast.Style.Success,
-                                            title: "Theme Generated"
-                                        })
-                                    })
-                                    .catch(error => {
-                                        // Handle any errors
-                                        console.error(error);
+                                            title: "Theme Finished",
+                                            message: "Accept the theme download and enjoy!",
+                                        });
 
+                                        open(
+                                            `raycast://theme?version=1&name=${name}&appearance=${appearance}&colors=${backgroundLight},${backgroundDark},${text},${highlight},${highlight},%23F50A0A,%23F5600A,%23E0A200,%2307BA65,%230A7FF5,%23470AF5,%23F50AA3`
+                                        );
+                                    })
+                                    .catch(() => {
                                         showToast({
-                                            style: Toast.Style.Failure,
-                                            title: "Failed to Generate Theme"
-                                        })
+                                            style: Toast.Style.Success,
+                                            title: "Generation Failed",
+                                            message: "Try again, and submit an issue if it fails again.",
+                                        });
                                     });
                                 popToRoot();
                             }}
@@ -83,14 +100,9 @@ export default function Command() {
             >
                 <Form.Description
                     title="Theme Name"
-                    text='Theme name is optional. If you choose AI Title, Raycast AI will generate a Title for you. Otherwise, it will simply be called "New Theme"'
+                    text="Theme name is optional. Leave it blank to have AI generate it for you!"
                 />
-                <Form.TextField
-                    id="themeName"
-                    title="Theme Name"
-                    placeholder="Name your theme..."
-                    defaultValue="New Theme"
-                />
+                <Form.TextField id="themeName" placeholder="Name your theme..." />
                 <Form.FilePicker
                     id="image"
                     title="Image"
@@ -98,7 +110,6 @@ export default function Command() {
                     error={imageError}
                     onChange={dropImageErrorIfNeeded}
                     onBlur={(event) => {
-                        console.log(event.target.value)
                         if (event.target.value?.length === 0) {
                             setImageError("Please choose an image to use.");
                         } else {
@@ -111,15 +122,10 @@ export default function Command() {
                     title="Theme Type"
                     text="Depending on your choice, Colorify will either create a darker theme, or a lighter-colored theme."
                 />
-                <Form.Dropdown id="theme" defaultValue="dark">
+                <Form.Dropdown id="appearance" defaultValue="light">
                     <Form.Dropdown.Item value="light" title="Light Theme" />
                     <Form.Dropdown.Item value="dark" title="Dark Theme" />
                 </Form.Dropdown>
-                <Form.Description
-                    title="AI Title"
-                    text="Using Raycast AI, Colorify takes your current title, your colors, and more to generate a beautifully named Theme."
-                />
-                <Form.Checkbox id="ai" label="Enhance your theme title with AI" defaultValue={false} />
             </Form>
         );
     }
