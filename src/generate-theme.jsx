@@ -91,7 +91,7 @@ export default function Command() {
                         let bgLight, bgDark;
                         if (appearance === "light") {
                           [bgLight, bgDark] = await AI.ask(
-                            `For a *LIGHT COLORED COLOR PALETTE*, choose a *VISUALLY LIGHTER* \`backgroundLight\` and a *VISUALLY DARKER* \`backgroundDark\` for the background colors, based on this palette: [${hex.join(",")}]. Make them *CLOSE TO EACH OTHER*, *MOSTLY WHITE AND DULL*, but still with a *HINT OF COLOR*. You may *MODIFY the COLORS* to make them lighter. *ENSURE* the colors are *VISUALLY APPEALING*. Return your answer as *TWO HEX STRINGS*, separated with *a SPACE*. Return \`backgroundLight\` first, and \`backgroundDark\` second.`,
+                            `For a *LIGHT COLORED COLOR PALETTE*, choose a *VISUALLY LIGHTER* \`backgroundLight\` and a *VISUALLY DARKER* \`backgroundDark\` for the background colors, based on this palette: [${hex.join(",")}]. Make them *VERY CLOSE TO EACH OTHER*, *MOSTLY WHITE AND DULL*, but still with a *HINT OF COLOR*. You may *MODIFY the COLORS* to make them lighter. *ENSURE* the colors are *VISUALLY APPEALING*. Return your answer as *TWO HEX STRINGS*, separated with *a SPACE*. Return \`backgroundLight\` first, and \`backgroundDark\` second.`,
                             { creativity: 0 }
                           ).then(response => orderHexColors(...(response.split(" ").map(x => x.trim()))).map(x => encode(x)));
                         } else {
@@ -107,7 +107,7 @@ export default function Command() {
                           message: "Using Raycast AI to generate your Theme",
                         });
                         let text = await AI.ask(
-                          `Generate a CONTRASTING COLOR that is VISIBLE on BOTH of these colors: ${bgLight} and ${bgDark}. Make it AS CONTRASTING AS POSSIBLE, though still BASED ON this PALETTE IF POSSIBLE: [${hex.join(",")}]. Return your answer as a SINGLE HEX STRING. Do NOT return anything else.`,
+                          `Generate the *MOST CONTRASTING COLOR* to *BOTH* of these colors: ${bgLight} and ${bgDark}. If possible, base it off this palette: [${hex.join(",")}]. Return your answer as a *SINGLE HEX STRING*. Do *NOT* return anything else.`,
                           { creativity: 0 }
                         ).then(response => encode(response.trim()));
 
@@ -117,7 +117,7 @@ export default function Command() {
                           message: "Using Raycast AI to generate your Theme",
                         });
                         let highlight = await AI.ask(
-                          `Generate a HIGHLIGHT COLOR that LOOKS GOOD on BOTH of these colors: ${bgLight} and ${bgDark}. Make it BASED ON this PALETTE: [${hex.join(",")}], but still AS BRIGHT and POPPING AS POSSIBLE. Return your answer as a SINGLE HEX STRING. Do NOT return anything else.`,
+                          `Generate a *HIGHLIGHT COLOR* that *LOOKS GOOD* on *BOTH* of these colors: ${bgLight} and ${bgDark}. Make it *BASED ON* this *PALETTE*: [${hex.join(",")}], but still *AS BRIGHT* and *POPPING AS POSSIBLE*. Return your answer as a *SINGLE HEX STRING*. Do *NOT* return anything else.`,
                           { creativity: 0 }
                         ).then(response => encode(response.trim()));
 
@@ -154,7 +154,7 @@ export default function Command() {
                         }
 
                         open(
-                          `raycast://theme?version=1&name=${name}&appearance=${appearance}&colors=${bgLight},${bgDark},${text},${highlight},${highlight},${red},${orange},${yellow},${green},${blue},${purple},${magenta}`
+                          `raycast://theme?version=1&name=${name}&appearance=${appearance}&colors=${bgDark},${bgLight},${text},${highlight},${highlight},${red},${orange},${yellow},${green},${blue},${purple},${magenta}`
                         );
                       })
                       .catch((e) => {
