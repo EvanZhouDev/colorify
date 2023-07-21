@@ -83,6 +83,17 @@ export default function Command() {
                     await ColorThief.getPalette(resizedImageBuffer, 5)
                       .then(async (palette) => {
                         let hex = palette.map((x) => rgbToHex(x));
+                        if (appearance === "ai") {
+                          showToast({
+                            style: Toast.Style.Animated,
+                            title: "Choosing Light or Dark",
+                            message: "Using Raycast AI to generate your Theme",
+                          });
+                          appearance = await AI.ask(
+                            `Based on this palette: [${hex.join(",")}], decide whether this is a *LIGHT* or *DARK THEMED* *PALETTE*. *RETURN* "light" for *LIGHT* and "dark" for *DARK*. Return *NOTHING ELSE*.`,
+                            { creativity: 0 }
+                          ).then(response => response.trim().toLowerCase());
+                        }
                         showToast({
                           style: Toast.Style.Animated,
                           title: "Generating Background",
@@ -225,9 +236,10 @@ Only bitmap images less than 4k are accepted."
         <Form.Separator />
         <Form.Description
           title="Theme Type"
-          text="Create a Light Theme or Dark Theme"
+          text="Create a Light Theme, Dark Theme, or Auto (Use AI to automatically decide the theme type)"
         />
-        <Form.Dropdown id="appearance" defaultValue="light">
+        <Form.Dropdown id="appearance" defaultValue="ai">
+          <Form.Dropdown.Item value="ai" title="Auto" />
           <Form.Dropdown.Item value="light" title="Light Theme" />
           <Form.Dropdown.Item value="dark" title="Dark Theme" />
         </Form.Dropdown>
