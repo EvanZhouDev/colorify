@@ -160,10 +160,9 @@ export default function Command() {
                           name = await AI.ask(
                             `Given the following colors: [${bgDark}, ${bgLight}, ${text}, ${highlight}], name a Theme. Use 1-2 words, and more only if necessary. Some example names are "White Flames", "Bright Lights", "Burning Candle". Keep in mind this is a ${appearance} theme, so adapt the title to it. ${values.descriptionTitle ? "Here are extra instructions to consider ON TOP OF all previous instructions: " + values.descriptionTitle : ""} DO NOT include ANYTHING BEFORE OR AFTER THE TITLE, including QUOTATION MAKRS, PERIODS, or ANY OTHER PUNCTUATION`,
                             { creativity: 0 }
-                          ).then(response => encode(response.trim().replaceAll('"', "") ?? "New Theme"));
-                          if (name.endsWith(".")) name = name.slice(0, -1)
+                          ).then(response => encode(response.replace(".", "").trim()));
                         }
-
+                        console.log(`raycast://theme?version=1&name=${name}&appearance=${appearance}&colors=${bgDark},${bgLight},${text},${highlight},${highlight},${red},${orange},${yellow},${green},${blue},${purple},${magenta}`)
                         open(
                           `raycast://theme?version=1&name=${name}&appearance=${appearance}&colors=${bgDark},${bgLight},${text},${highlight},${highlight},${red},${orange},${yellow},${green},${blue},${purple},${magenta}`
                         );
