@@ -58,6 +58,10 @@ export default function Command() {
       return orderedColors;
     }
 
+    let extractHexFromString = (string) => {
+      return string.match(/#(?:[0-9a-fA-F]{3}){1,2}\b/g)
+    }
+
     return (
       <Form
         actions={
@@ -104,12 +108,12 @@ export default function Command() {
                           [bgLight, bgDark] = await AI.ask(
                             `For a *LIGHT COLORED COLOR PALETTE*, choose a *VISUALLY LIGHTER* \`backgroundLight\` and a *VISUALLY DARKER* \`backgroundDark\` for the background colors, based on this palette: [${hex.join(",")}]. Make them *VERY CLOSE TO EACH OTHER*, *MOSTLY WHITE AND DULL*, but still with a *HINT OF COLOR*. You may *MODIFY the COLORS* to make them lighter. *ENSURE* the colors are *VISUALLY APPEALING*. ${values.descriptionBg ? "Here are some extra instructions: " + values.descriptionBg : ""}Return your answer as *TWO HEX STRINGS*, separated with *a SPACE*. Return \`backgroundLight\` first, and \`backgroundDark\` second.`,
                             { creativity: 0 }
-                          ).then(response => orderHexColors(...(response.split(" ").map(x => x.trim()))).map(x => encode(x)));
+                          ).then(response => orderHexColors(...extractHexFromString(response)).map(x => encode(x)));
                         } else {
                           [bgLight, bgDark] = await AI.ask(
                             `For a *DARK THEMED COLOR PALETTE*, choose a *VISUALLY LIGHTER* \`backgroundLight\` and a *VISUALLY DARKER* \`backgroundDark\` for the background colors, based on this palette: [${hex.join(", ")}]. Make them *CLOSE TO EACH OTHER*, *MOSTLY DARK AND DULL*, but still with a *HINT OF COLOR*. You may *MODIFY the COLORS* to make them *MORE FITTING*. *ENSURE* the colors are *VISUALLY APPEALING*. Return your answer as *TWO HEX STRINGS*, separated with *a SPACE*. Return \`backgroundLight\` first, and \`backgroundDark\` second.`,
                             { creativity: 0 }
-                          ).then(response => response.split(" ").map(x => encode(x.trim())));
+                          ).then(response => orderHexColors(...extractHexFromString(response)).map(x => encode(x)));
                         }
                         console.log("BACKGROUND COLORS", bgLight, bgDark);
 
@@ -121,7 +125,7 @@ export default function Command() {
                         let text = await AI.ask(
                           `Generate the *MOST CONTRASTING COLOR* to *BOTH* of these colors: ${bgLight} and ${bgDark} for *TEXT ON THE BACKGROUND*. If possible, base it off this palette: [${hex.join(",")}]. Return your answer as a *SINGLE HEX STRING*. Do *NOT* return anything else.`,
                           { creativity: 0 }
-                        ).then(response => encode(response.trim()));
+                        ).then(response => encode(extractHexFromString(response)[0]));
                         console.log("TEXT COLOR", text);
                         showToast({
                           style: Toast.Style.Animated,
@@ -131,7 +135,7 @@ export default function Command() {
                         let highlight = await AI.ask(
                           `Generate a *HIGHLIGHT COLOR* that *LOOKS GOOD* on *BOTH* of these colors: ${bgLight} and ${bgDark}. Make it *BASED ON* this *PALETTE*: [${hex.join(",")}], but still *AS BRIGHT* and *POPPING AS POSSIBLE*. Return your answer as a *SINGLE HEX STRING*. Do *NOT* return anything else.`,
                           { creativity: 0 }
-                        ).then(response => encode(response.trim()));
+                        ).then(response => encode(extractHexFromString(response)[0]));
                         console.log("HIGHLIGHT COLOR", highlight);
                         showToast({
                           style: Toast.Style.Animated,
@@ -143,21 +147,21 @@ export default function Command() {
 
                         if (appearance === "light") {
                           [red, orange, yellow, green, blue, purple, magenta]
-                          = ["#F50A0A", "#F5600A", "#E0A200", "#07BA65", "#0A7FF5", "#470AF5", "#F50AA3"]
+                            = ["%23F50A0A", "%23F5600A", "%23E0A200", "%2307BA65", "%230A7FF5", "%23470AF5", "%23F50AA3"]
                           if (values.genSupport) {
                             [red, orange, yellow, green, blue, purple, magenta] = await AI.ask(
                               `MODIFY these COLORS IF NECESSARY so that they LOOK GOOD and HAVE GOOD CONTRAST on BOTH of these colors: ${bgLight} and ${bgDark}. Red (#F50A0A), orange (#F5600A), yellow (#E0A200), green (#07BA65), blue (#0A7FF5), purple (#470AF5), and magenta (#F50AA3). Give your new colors in a comma separated list, in this order: red, orange, yellow, green, blue, purple, magenta. Do not provide anything BEFORE, or AFTER.`,
                               { creativity: 0 }
-                            ).then(response => response.trim().replace(" ", "").split(",").map(x => encode(x.trim())));
+                            ).then(response => extractHexFromString(response).map(x => encode(x.trim())));
                           }
                         } else {
                           [red, orange, yellow, green, blue, purple, magenta]
-                          = ["#F84E4E", "#F88D4E", "#FFCC47", "#4EF8A7", "#228CF6", "#7B4EF8", "#F84EBD"]
+                            = ["%23F84E4E", "%23F88D4E", "%23FFCC47", "%234EF8A7", "%23228CF6", "%237B4EF8", "%23F84EBD"]
                           if (values.genSupport) {
                             [red, orange, yellow, green, blue, purple, magenta] = await AI.ask(
                               `MODIFY these COLORS IF NECESSARY so that they LOOK GOOD and HAVE GOOD CONTRAST on BOTH of these colors: ${bgLight} and ${bgDark}. Red (#F84E4E), orange (#F88D4E), yellow (#FFCC47), green (#4EF8A7), blue (#228CF6), purple (#7B4EF8), and magenta (#F84EBD). Give your new colors in a comma separated list, in this order: red, orange, yellow, green, blue, purple, magenta. Do not provide anything BEFORE, or AFTER.`,
                               { creativity: 0 }
-                            ).then(response => response.trim().replace(" ", "").split(",").map(x => encode(x.trim())));
+                            ).then(response => extractHexFromString(response).map(x => encode(x.trim())));
                           }
                         }
                         console.log("SUPPORT COLORS", red, orange, yellow, green, blue, purple, magenta)
