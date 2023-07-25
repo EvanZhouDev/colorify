@@ -58,6 +58,9 @@ export default function Command() {
       return orderedColors;
     }
 
+    let encode = (string) => {
+      return encodeURI(string).replace("#", "%23");
+    };
     let extractHexFromString = (string) => {
       return string.match(/#(?:[0-9a-fA-F]{3}){1,2}\b/g)
     }
@@ -75,14 +78,13 @@ export default function Command() {
                   if (!fs.existsSync(image) || !fs.lstatSync(image).isFile()) {
                     return false;
                   }
+
                   showToast({
                     style: Toast.Style.Animated,
                     title: "Loading Theme",
                     message: "Using Raycast AI to generate your Theme",
                   });
-                  let encode = (string) => {
-                    return encodeURI(string).replace("#", "%23");
-                  };
+
                   let processImage = async (resizedImageBuffer) => {
                     await ColorThief.getPalette(resizedImageBuffer, 5)
                       .then(async (palette) => {
@@ -96,7 +98,7 @@ export default function Command() {
                           appearance = await AI.ask(
                             `Based on this palette: [${hex.join(",")}], decide whether this is a *LIGHT* or *DARK THEMED* *PALETTE*. *RETURN* "light" for *LIGHT* and "dark" for *DARK*. Return *NOTHING ELSE*.`,
                             { creativity: 0 }
-                          ).then(response => response.trim().toLowerCase());
+                          ).then(response => (response.match(/\b(light|dark)\b/i) || ["light"])[0].toLowerCase());
                         }
                         showToast({
                           style: Toast.Style.Animated,
@@ -108,12 +110,24 @@ export default function Command() {
                           [bgLight, bgDark] = await AI.ask(
                             `For a *LIGHT COLORED COLOR PALETTE*, choose a *VISUALLY LIGHTER* \`backgroundLight\` and a *VISUALLY DARKER* \`backgroundDark\` for the background colors, based on this palette: [${hex.join(",")}]. Make them *VERY CLOSE TO EACH OTHER*, *MOSTLY WHITE AND DULL*, but still with a *HINT OF COLOR*. You may *MODIFY the COLORS* to make them lighter. *ENSURE* the colors are *VISUALLY APPEALING*. ${values.descriptionBg ? "Here are some extra instructions: " + values.descriptionBg : ""}Return your answer as *TWO HEX STRINGS*, separated with *a SPACE*. Return \`backgroundLight\` first, and \`backgroundDark\` second.`,
                             { creativity: 0 }
-                          ).then(response => orderHexColors(...extractHexFromString(response)).map(x => encode(x)));
+                          ).then(response => {
+                            if (extractHexFromString(response).length) {
+                              return orderHexColors(...extractHexFromString(response)).map(x => encode(x))
+                            } else {
+                              return ["#FFFFFF", "#FFFFFF"]
+                            }
+                          });
                         } else {
                           [bgLight, bgDark] = await AI.ask(
                             `For a *DARK THEMED COLOR PALETTE*, choose a *VISUALLY LIGHTER* \`backgroundLight\` and a *VISUALLY DARKER* \`backgroundDark\` for the background colors, based on this palette: [${hex.join(", ")}]. Make them *CLOSE TO EACH OTHER*, *MOSTLY DARK AND DULL*, but still with a *HINT OF COLOR*. You may *MODIFY the COLORS* to make them *MORE FITTING*. *ENSURE* the colors are *VISUALLY APPEALING*. Return your answer as *TWO HEX STRINGS*, separated with *a SPACE*. Return \`backgroundLight\` first, and \`backgroundDark\` second.`,
                             { creativity: 0 }
-                          ).then(response => orderHexColors(...extractHexFromString(response)).map(x => encode(x)));
+                          ).then(response => {
+                            if (extractHexFromString(response).length) {
+                              return orderHexColors(...extractHexFromString(response)).map(x => encode(x))
+                            } else {
+                              return ["#030303", "#030303"]
+                            }
+                          });
                         }
                         console.log("BACKGROUND COLORS", bgLight, bgDark);
 
@@ -125,7 +139,7 @@ export default function Command() {
                         let text = await AI.ask(
                           `Generate the *MOST CONTRASTING COLOR* to *BOTH* of these colors: ${bgLight} and ${bgDark} for *TEXT ON THE BACKGROUND*. If possible, base it off this palette: [${hex.join(",")}]. Return your answer as a *SINGLE HEX STRING*. Do *NOT* return anything else.`,
                           { creativity: 0 }
-                        ).then(response => encode(extractHexFromString(response)[0]));
+                        ).then(response => encode((extractHexFromString(response) || (appearance === "light" ? ["#0D0D0D"] : ["#F2F2F2"]))[0]));
                         console.log("TEXT COLOR", text);
                         showToast({
                           style: Toast.Style.Animated,
@@ -135,7 +149,7 @@ export default function Command() {
                         let highlight = await AI.ask(
                           `Generate a *HIGHLIGHT COLOR* that *LOOKS GOOD* on *BOTH* of these colors: ${bgLight} and ${bgDark}. Make it *BASED ON* this *PALETTE*: [${hex.join(",")}], but still *AS BRIGHT* and *POPPING AS POSSIBLE*. Return your answer as a *SINGLE HEX STRING*. Do *NOT* return anything else.`,
                           { creativity: 0 }
-                        ).then(response => encode(extractHexFromString(response)[0]));
+                        ).then(response => encode((extractHexFromString(response) || (appearance === "light" ? ["#030303"] : ["#FFFFFF"]))[0]));
                         console.log("HIGHLIGHT COLOR", highlight);
                         showToast({
                           style: Toast.Style.Animated,
@@ -271,11 +285,10 @@ Only bitmap images less than 4k are accepted."
               text="Whether or not to modify the red, orange, green, blue, purple, and magenta color of the theme. Uses default light or dark values otherwise."
             />
 
-            <Form.Checkbox id="genSupport" label="Generate" />
+            <Form.Checkbox id="genSupport" label="Generate" value={true} />
             <Form.Description
               title="Title Creativity"
               text="Choose the creativity used in the Theme Title generation."
-              defaultValue={true}
             />
 
             <Form.Dropdown id="themeCreativity" defaultValue="none">
@@ -285,12 +298,6 @@ Only bitmap images less than 4k are accepted."
               <Form.Dropdown.Item value="high" title="High Creativity" />
               <Form.Dropdown.Item value="maximum" title="Max Creativity" />
             </Form.Dropdown>
-
-            <Form.Description
-              title="Instructions"
-              text="Additional instructions regarding title generation."
-            />
-            <Form.TextArea title="Title" id="descriptionTitle" placeholder={"Make the title one word..."} />
           </>}
         <Form.Separator />
         <Form.Description
