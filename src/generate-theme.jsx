@@ -103,14 +103,15 @@ export default function Command() {
                         if (appearance === "light") {
                           [bgLight, bgDark] = await AI.ask(
                             `For a *LIGHT COLORED COLOR PALETTE*, choose a *VISUALLY LIGHTER* \`backgroundLight\` and a *VISUALLY DARKER* \`backgroundDark\` for the background colors, based on this palette: [${hex.join(",")}]. Make them *VERY CLOSE TO EACH OTHER*, *MOSTLY WHITE AND DULL*, but still with a *HINT OF COLOR*. You may *MODIFY the COLORS* to make them lighter. *ENSURE* the colors are *VISUALLY APPEALING*. ${values.descriptionBg ? "Here are some extra instructions: " + values.descriptionBg : ""}Return your answer as *TWO HEX STRINGS*, separated with *a SPACE*. Return \`backgroundLight\` first, and \`backgroundDark\` second.`,
-                            { creativity: values.colorCreativity }
+                            { creativity: 0 }
                           ).then(response => orderHexColors(...(response.split(" ").map(x => x.trim()))).map(x => encode(x)));
                         } else {
                           [bgLight, bgDark] = await AI.ask(
                             `For a *DARK THEMED COLOR PALETTE*, choose a *VISUALLY LIGHTER* \`backgroundLight\` and a *VISUALLY DARKER* \`backgroundDark\` for the background colors, based on this palette: [${hex.join(", ")}]. Make them *CLOSE TO EACH OTHER*, *MOSTLY DARK AND DULL*, but still with a *HINT OF COLOR*. You may *MODIFY the COLORS* to make them *MORE FITTING*. *ENSURE* the colors are *VISUALLY APPEALING*. Return your answer as *TWO HEX STRINGS*, separated with *a SPACE*. Return \`backgroundLight\` first, and \`backgroundDark\` second.`,
-                            { creativity: values.colorCreativity }
+                            { creativity: 0 }
                           ).then(response => response.split(" ").map(x => encode(x.trim())));
                         }
+                        console.log("BACKGROUND COLORS", bgLight, bgDark);
 
                         showToast({
                           style: Toast.Style.Animated,
@@ -119,9 +120,9 @@ export default function Command() {
                         });
                         let text = await AI.ask(
                           `Generate the *MOST CONTRASTING COLOR* to *BOTH* of these colors: ${bgLight} and ${bgDark} for *TEXT ON THE BACKGROUND*. If possible, base it off this palette: [${hex.join(",")}]. Return your answer as a *SINGLE HEX STRING*. Do *NOT* return anything else.`,
-                          { creativity: values.colorCreativity }
+                          { creativity: 0 }
                         ).then(response => encode(response.trim()));
-
+                        console.log("TEXT COLOR", text);
                         showToast({
                           style: Toast.Style.Animated,
                           title: "Generating Highlight",
@@ -129,9 +130,9 @@ export default function Command() {
                         });
                         let highlight = await AI.ask(
                           `Generate a *HIGHLIGHT COLOR* that *LOOKS GOOD* on *BOTH* of these colors: ${bgLight} and ${bgDark}. Make it *BASED ON* this *PALETTE*: [${hex.join(",")}], but still *AS BRIGHT* and *POPPING AS POSSIBLE*. Return your answer as a *SINGLE HEX STRING*. Do *NOT* return anything else.`,
-                          { creativity: values.colorCreativity }
+                          { creativity: 0 }
                         ).then(response => encode(response.trim()));
-
+                        console.log("HIGHLIGHT COLOR", highlight);
                         showToast({
                           style: Toast.Style.Animated,
                           title: "Generating Support Colors",
@@ -139,17 +140,27 @@ export default function Command() {
                         });
                         let red, orange, yellow, green, blue, purple, magenta;
 
+
                         if (appearance === "light") {
-                          [red, orange, yellow, green, blue, purple, magenta] = await AI.ask(
-                            `MODIFY these COLORS IF NECESSARY so that they LOOK GOOD and HAVE GOOD CONTRAST on BOTH of these colors: ${bgLight} and ${bgDark}. Red (#F50A0A), orange (#F5600A), yellow (#E0A200), green (#07BA65), blue (#0A7FF5), purple (#470AF5), and magenta (#F50AA3). GIVE your COLORS as HEX STRINGS, separated by SPACES, in the ORDER YOU WERE GIVEN. RETURN NOTHING ELSE, not in front or after.`,
-                            { creativity: values.colorCreativity }
-                          ).then(response => response.trim().split(" ").map(x => encode(x.trim())));
+                          [red, orange, yellow, green, blue, purple, magenta]
+                          = ["#F50A0A", "#F5600A", "#E0A200", "#07BA65", "#0A7FF5", "#470AF5", "#F50AA3"]
+                          if (values.genSupport) {
+                            [red, orange, yellow, green, blue, purple, magenta] = await AI.ask(
+                              `MODIFY these COLORS IF NECESSARY so that they LOOK GOOD and HAVE GOOD CONTRAST on BOTH of these colors: ${bgLight} and ${bgDark}. Red (#F50A0A), orange (#F5600A), yellow (#E0A200), green (#07BA65), blue (#0A7FF5), purple (#470AF5), and magenta (#F50AA3). Give your new colors in a comma separated list, in this order: red, orange, yellow, green, blue, purple, magenta. Do not provide anything BEFORE, or AFTER.`,
+                              { creativity: 0 }
+                            ).then(response => response.trim().replace(" ", "").split(",").map(x => encode(x.trim())));
+                          }
                         } else {
-                          [red, orange, yellow, green, blue, purple, magenta] = await AI.ask(
-                            `MODIFY these COLORS IF NECESSARY so that they LOOK GOOD and HAVE GOOD CONTRAST on BOTH of these colors: ${bgLight} and ${bgDark}. Red (#F84E4E), orange (#F88D4E), yellow (#FFCC47), green (#4EF8A7), blue (#228CF6), purple (#7B4EF8), and magenta (#F84EBD). GIVE your COLORS as HEX STRINGS, separated by SPACES, in the ORDER YOU WERE GIVEN. RETURN NOTHING ELSE, not in front or after.`,
-                            { creativity: values.colorCreativity }
-                          ).then(response => response.trim().split(" ").map(x => encode(x.trim())));
+                          [red, orange, yellow, green, blue, purple, magenta]
+                          = ["#F84E4E", "#F88D4E", "#FFCC47", "#4EF8A7", "#228CF6", "#7B4EF8", "#F84EBD"]
+                          if (values.genSupport) {
+                            [red, orange, yellow, green, blue, purple, magenta] = await AI.ask(
+                              `MODIFY these COLORS IF NECESSARY so that they LOOK GOOD and HAVE GOOD CONTRAST on BOTH of these colors: ${bgLight} and ${bgDark}. Red (#F84E4E), orange (#F88D4E), yellow (#FFCC47), green (#4EF8A7), blue (#228CF6), purple (#7B4EF8), and magenta (#F84EBD). Give your new colors in a comma separated list, in this order: red, orange, yellow, green, blue, purple, magenta. Do not provide anything BEFORE, or AFTER.`,
+                              { creativity: 0 }
+                            ).then(response => response.trim().replace(" ", "").split(",").map(x => encode(x.trim())));
+                          }
                         }
+                        console.log("SUPPORT COLORS", red, orange, yellow, green, blue, purple, magenta)
 
                         if (!name) {
                           showToast({
@@ -159,9 +170,10 @@ export default function Command() {
                           });
                           name = await AI.ask(
                             `Given the following colors: [${bgDark}, ${bgLight}, ${text}, ${highlight}], name a Theme. Use 1-2 words, and more only if necessary. Some example names are "White Flames", "Bright Lights", "Burning Candle". Keep in mind this is a ${appearance} theme, so adapt the title to it. ${values.descriptionTitle ? "Here are extra instructions to consider ON TOP OF all previous instructions: " + values.descriptionTitle : ""} DO NOT include ANYTHING BEFORE OR AFTER THE TITLE, including QUOTATION MAKRS, PERIODS, or ANY OTHER PUNCTUATION`,
-                            { creativity: 0 }
+                            { creativity: values.themeCreativity }
                           ).then(response => encode(response.replace(".", "").trim()));
                         }
+                        console.log("TITLE", name)
                         console.log(`raycast://theme?version=1&name=${name}&appearance=${appearance}&colors=${bgDark},${bgLight},${text},${highlight},${highlight},${red},${orange},${yellow},${green},${blue},${purple},${magenta}`)
                         open(
                           `raycast://theme?version=1&name=${name}&appearance=${appearance}&colors=${bgDark},${bgLight},${text},${highlight},${highlight},${red},${orange},${yellow},${green},${blue},${purple},${magenta}`
@@ -248,13 +260,21 @@ Only bitmap images less than 4k are accepted."
         />
         <Form.Checkbox id="showAdvanced" value={showAdvanced} label="Show" onChange={setShowAdvanced} />
         {showAdvanced &&
-          <><Form.Separator />
+          <>
+            <Form.Separator />
             <Form.Description
-              title="Creativity"
-              text="Choose the creativity used in the Colorify color-touchup prompts."
+              title="Generate Supports"
+              text="Whether or not to modify the red, orange, green, blue, purple, and magenta color of the theme. Uses default light or dark values otherwise."
             />
 
-            <Form.Dropdown id="colorCreativity" defaultValue="none">
+            <Form.Checkbox id="genSupport" label="Generate" />
+            <Form.Description
+              title="Title Creativity"
+              text="Choose the creativity used in the Theme Title generation."
+              defaultValue={true}
+            />
+
+            <Form.Dropdown id="themeCreativity" defaultValue="none">
               <Form.Dropdown.Item value="none" title="Precise" />
               <Form.Dropdown.Item value="low" title="Low Creativity" />
               <Form.Dropdown.Item value="medium" title="Medium Creativity" />
@@ -264,7 +284,7 @@ Only bitmap images less than 4k are accepted."
 
             <Form.Description
               title="Instructions"
-              text="Additional instructions regarding generation."
+              text="Additional instructions regarding title generation."
             />
             <Form.TextArea title="Title" id="descriptionTitle" placeholder={"Make the title one word..."} />
           </>}
@@ -276,11 +296,6 @@ Only bitmap images less than 4k are accepted."
 Using too many AI features may result in rate limiting. Please use them sparingly.
           "
         />
-        {/* <Form.Description
-          title="Generate Support Colors"
-          text="Whether or not to modify the original red, orange, yellow, green, blue, purple, and magenta colors. Defaults are from original Raycast Light and Dark themes."
-        />
-        <Form.Checkbox id="genSupport" label="Generate Support Colors" /> */}
       </Form>
     );
   }
