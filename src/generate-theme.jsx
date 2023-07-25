@@ -137,7 +137,7 @@ export default function Command() {
                           message: "Using Raycast AI to generate your Theme",
                         });
                         let text = await AI.ask(
-                          `Generate the *MOST CONTRASTING COLOR* to *BOTH* of these colors: ${bgLight} and ${bgDark} for *TEXT ON THE BACKGROUND*. If possible, base it off this palette: [${hex.join(",")}]. Return your answer as a *SINGLE HEX STRING*. Do *NOT* return anything else.`,
+                          `MODIFY ONE OF THESE COLORS [${hex.join(",")}] to get it to MAX CONTRAST on these two colors: ${bgLight} and ${bgDark}. It should be EASILY VISIBLE. Return your answer as a *SINGLE HEX STRING*. Do *NOT* return anything else.`,
                           { creativity: 0 }
                         ).then(response => encode((extractHexFromString(response) || (appearance === "light" ? ["#0D0D0D"] : ["#F2F2F2"]))[0]));
                         console.log("TEXT COLOR", text);
